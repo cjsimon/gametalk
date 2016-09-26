@@ -1,37 +1,74 @@
 // MQTT Setup
-var mqtt = require('mqtt');
+//var mqtt = require('mqtt');
 var options = {
   port: 1883,
   host: '192.168.43.246',
-  clientId: 'AdyPi_MQTT_Publisher'
+  clientId: 'Game_MQTT_Publisher'
 };
-var client = mqtt.connect(options);
+//var ////client = mqtt.connect(options);
 
+var twilioclient = require('twilio')(
+  "ACb683f5856834e7844d9005b7a43f316c",
+  //process.env.TWILIO_ACCOUNT_SID,
+  "9c70c204f5a2307c676b689e3ccc0302"
+  //process.env.TWILIO_AUTH_TOKEN
+);
 
 var Accessory = require('../').Accessory;
 var Service = require('../').Service;
 var Characteristic = require('../').Characteristic;
 var uuid = require('../').uuid;
 
-
-
 // here's a fake hardware device that we'll expose to HomeKit
-var FAKE_LIGHT = {
+var GAME = {
   powerOn: false,
   brightness: 100, // percentage
 
   setPowerOn: function(on) { 
-    console.log("Turning AdyLight %s!", on ? "on" : "off");
+    console.log("Turning Game %s!", on ? "on" : "off");
     
-    if (on) {
-      client.publish('AdyLight', 'on');
+    // Numbers
+    // TODO: Sanitize the input that is coming in just in case the numbers were compromised
+    var numbers = process.env.Numbers;
+    
+    // MQTT
+    if(on) {
+      ////client.publish('Game', 'on');
+      
+      numbers.forEach(function(number){
+        twilioclient.messages.create({
+          from: "+15072014108",
+          to: number,
+          body: "Game is running!",
+          mediaUrl: "https://c1.staticflickr.com/3/2899/14341091933_1e92e62d12_b.jpg"
+        }, function(err, message) {
+          if(err) {
+            console.error(err.message);
+          }
+        });
+      });
+      
     } else {
-      client.publish('AdyLight','off');
+      //client.publish('Game','off');
+      
+      numbers.forEach(function(number){
+        twilioclient.messages.create({
+          from: "+15072014108",
+          to: number,
+          body: "Game is no longer running...",
+          mediaUrl: "https://c1.staticflickr.com/3/2899/14341091933_1e92e62d12_b.jpg"
+        }, function(err, message) {
+          if(err) {
+            console.error(err.message);
+          }
+        });
+      });
+      
     }
   },
   setBrightness: function(brightness) {
     console.log("Setting light brightness to %s", brightness);
-    FAKE_LIGHT.brightness = brightness;
+    GAME.brightness = brightness;
   },
   identify: function() {
     console.log("Identify the light!");
@@ -59,17 +96,17 @@ light
 
 // listen for the "identify" event for this Accessory
 light.on('identify', function(paired, callback) {
-  FAKE_LIGHT.identify();
+  GAME.identify();
   callback(); // success
 });
 
 // Add the actual Lightbulb Service and listen for change events from iOS.
 // We can see the complete list of Services and Characteristics in `lib/gen/HomeKitTypes.js`
 light
-  .addService(Service.Lightbulb, "Fake Light") // services exposed to the user should have "names" like "Fake Light" for us
+  .addService(Service.Lightbulb, "Game") // services exposed to the user should have "names" like "Game" for us
   .getCharacteristic(Characteristic.On)
   .on('set', function(value, callback) {
-    FAKE_LIGHT.setPowerOn(value);
+    GAME.setPowerOn(value);
     callback(); // Our fake Light is synchronous - this value has been successfully set
   });
   
@@ -87,7 +124,7 @@ light
     
     var err = null; // in case there were any problems
     
-    if (FAKE_LIGHT.powerOn) {
+    if (GAME.powerOn) {
       console.log("Are we on? Yes.");
       callback(err, true);
     }
@@ -102,9 +139,9 @@ light
   .getService(Service.Lightbulb)
   .addCharacteristic(Characteristic.Brightness)
   .on('get', function(callback) {
-    callback(null, FAKE_LIGHT.brightness);
+    callback(null, GAME.brightness);
   })
   .on('set', function(value, callback) {
-    FAKE_LIGHT.setBrightness(value);
+    GAME.setBrightness(value);
     callback();
   })

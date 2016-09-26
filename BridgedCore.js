@@ -12,11 +12,11 @@ console.log("HAP-NodeJS starting...");
 storage.initSync();
 
 // Start by creating our Bridge which will host all loaded Accessories
-var bridge = new Bridge('Node Bridge', uuid.generate("Node Bridge"));
+var bridge = new Bridge('NoSpeak', uuid.generate("NoSpeak"));
 
 // Listen for bridge identification event
 bridge.on('identify', function(paired, callback) {
-  console.log("Node Bridge identify");
+  console.log("NoSpeak identify");
   callback(); // success
 });
 
@@ -33,6 +33,7 @@ accessories.forEach(function(accessory) {
 bridge.publish({
   username: "CC:22:3D:E3:CE:F6",
   port: 51826,
-  pincode: "031-45-154",
+  //pincode: "031-45-154",
+  pincode: "123-45-678",
   category: Accessory.Categories.BRIDGE
 });
